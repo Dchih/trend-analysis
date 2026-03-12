@@ -1,5 +1,14 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Serialize)]
+pub struct KeywordRecord {
+    pub id: u64,
+    pub keyword: String,
+    pub status: String,
+    pub created_at: String,
+    pub last_collected_at: Option<String>,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct KeywordSearchRequest {
     pub keyword: String,
