@@ -7,6 +7,7 @@ use actix_web::{App, HttpServer, web};
 use crate::app_state::AppState;
 use crate::routes::health::health;
 use crate::routes::keywords::{keyword_history, keyword_status, search_keyword};
+use crate::routes::overview::{keyword_overview, keyword_timeline, latest_contents, top_creators};
 
 pub fn build_app(state: AppState) -> App<
     impl actix_web::dev::ServiceFactory<
@@ -23,6 +24,10 @@ pub fn build_app(state: AppState) -> App<
         .service(search_keyword)
         .service(keyword_history)
         .service(keyword_status)
+        .service(keyword_overview)
+        .service(keyword_timeline)
+        .service(top_creators)
+        .service(latest_contents)
 }
 
 #[actix_web::main]
