@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from typing import Any
 
@@ -8,6 +9,8 @@ from src.persistence import Store
 from src.runtime import CollectorRuntime
 from src.worker import CollectorWorker
 
+logger = logging.getLogger(__name__)
+
 
 class StreamWorker:
     def __init__(self, runtime: CollectorRuntime, store: Store) -> None:
@@ -16,6 +19,42 @@ class StreamWorker:
     def process_payload(self, payload: str) -> dict[str, Any]:
         task = json.loads(payload)
         return self.worker.process(task)
+
+
+def process_entries(
+    client,
+    stream_worker: StreamWorker,
+    stream_key: str,
+    group_name: str,
+    messages,
+) -> None:
+    for _, entries in messages:
+        for message_id, data in entries:
+            payload = data["data"]
+            try:
+                stream_worker.process_payload(payload)
+            except Exception as error:  # noqa: BLE001
+                logger.exception("failed to process stream message %s: %s", message_id, error)
+                continue
+
+            client.xack(stream_key, group_name, message_id)
+
+
+def process_pending_entries(
+    client,
+    stream_worker: StreamWorker,
+    stream_key: str,
+    group_name: str,
+    consumer_name: str,
+) -> None:
+    pending = client.xreadgroup(
+        group_name,
+        consumer_name,
+        {stream_key: "0"},
+        count=10,
+        block=1000,
+    )
+    process_entries(client, stream_worker, stream_key, group_name, pending)
 
 
 def consume_forever(runtime: CollectorRuntime, store: Store) -> None:
@@ -33,6 +72,8 @@ def consume_forever(runtime: CollectorRuntime, store: Store) -> None:
         if "BUSYGROUP" not in str(error):
             raise
 
+    process_pending_entries(client, stream_worker, stream_key, group_name, consumer_name)
+
     while True:
         messages = client.xreadgroup(
             group_name,
@@ -41,9 +82,4 @@ def consume_forever(runtime: CollectorRuntime, store: Store) -> None:
             count=1,
             block=5000,
         )
-
-        for _, entries in messages:
-            for message_id, data in entries:
-                payload = data["data"]
-                stream_worker.process_payload(payload)
-                client.xack(stream_key, group_name, message_id)
+        process_entries(client, stream_worker, stream_key, group_name, messages)
