@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://productradar.local/schemas/api/keyword-overview.schema.json",
+  "title": "KeywordOverview",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "keyword": {
+      "type": "string",
+      "minLength": 1
+    },
+    "total_contents": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "total_creators": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "total_views": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "last_collected_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "trend_delta": {
+      "type": "number"
+    },
+    "platform_breakdown": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": ["youtube"]
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": ["platform", "count"]
+      }
+    }
+  },
+  "required": [
+    "keyword",
+    "total_contents",
+    "total_creators",
+    "total_views",
+    "last_collected_at"
+  ]
+}
