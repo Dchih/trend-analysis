@@ -1,19 +1,40 @@
 use std::sync::{Arc, Mutex};
 
 use actix_web::{App, http::StatusCode, test, web};
+use async_trait::async_trait;
 
 #[path = "../src/app_state.rs"]
 mod app_state;
 #[path = "../src/models/mod.rs"]
 mod models;
+#[path = "../src/repositories/mod.rs"]
+mod repositories;
 #[path = "../src/routes/mod.rs"]
 mod routes;
 #[path = "../src/services/mod.rs"]
 mod services;
 
 use app_state::AppState;
+use models::{keyword::KeywordRecord, task::CollectionTaskRecord};
+use repositories::keywords::KeywordRepository;
 use routes::keywords::search_keyword;
 use services::task_queue::{CollectTaskMessage, TaskQueue};
+
+#[derive(Clone, Default)]
+struct RecordingRepository {
+    saved_keywords: Arc<Mutex<Vec<String>>>,
+    saved_tasks: Arc<Mutex<Vec<(u64, String, String)>>>,
+}
+
+impl RecordingRepository {
+    fn keywords_len(&self) -> usize {
+        self.saved_keywords.lock().expect("poisoned mutex").len()
+    }
+
+    fn tasks_len(&self) -> usize {
+        self.saved_tasks.lock().expect("poisoned mutex").len()
+    }
+}
 
 #[derive(Clone, Default)]
 struct RecordingQueue {
@@ -26,8 +47,51 @@ impl RecordingQueue {
     }
 }
 
+#[async_trait]
+impl KeywordRepository for RecordingRepository {
+    async fn create_or_get_keyword(&self, keyword: &str) -> Result<KeywordRecord, String> {
+        self.saved_keywords
+            .lock()
+            .expect("poisoned mutex")
+            .push(keyword.to_string());
+
+        Ok(KeywordRecord {
+            id: 1,
+            keyword: keyword.to_string(),
+            status: "active".to_string(),
+            created_at: "2026-03-12T10:00:00Z".to_string(),
+            last_collected_at: None,
+        })
+    }
+
+    async fn create_collection_task(
+        &self,
+        keyword_id: u64,
+        platform: &str,
+        trigger_type: &str,
+    ) -> Result<CollectionTaskRecord, String> {
+        self.saved_tasks
+            .lock()
+            .expect("poisoned mutex")
+            .push((keyword_id, platform.to_string(), trigger_type.to_string()));
+
+        Ok(CollectionTaskRecord {
+            id: 99,
+            keyword_id,
+            platform: platform.to_string(),
+            trigger_type: trigger_type.to_string(),
+            status: "pending".to_string(),
+            requested_at: "2026-03-12T10:00:00Z".to_string(),
+            started_at: None,
+            finished_at: None,
+            error_message: None,
+        })
+    }
+}
+
+#[async_trait]
 impl TaskQueue for RecordingQueue {
-    fn publish(&self, task: CollectTaskMessage) -> Result<(), String> {
+    async fn publish(&self, task: CollectTaskMessage) -> Result<(), String> {
         self.published
             .lock()
             .expect("poisoned mutex")
@@ -38,10 +102,14 @@ impl TaskQueue for RecordingQueue {
 
 #[actix_web::test]
 async fn search_creates_a_pending_task_and_publishes_it() {
+    let repository = RecordingRepository::default();
     let queue = RecordingQueue::default();
     let app = test::init_service(
         App::new()
-            .app_data(web::Data::new(AppState::new(Arc::new(queue.clone()))))
+            .app_data(web::Data::new(AppState::new(
+                Arc::new(repository.clone()),
+                Arc::new(queue.clone()),
+            )))
             .service(search_keyword),
     )
     .await;
@@ -59,5 +127,7 @@ async fn search_creates_a_pending_task_and_publishes_it() {
     let body: serde_json::Value = test::read_body_json(response).await;
     assert_eq!(body["keyword"], "ninja creami");
     assert_eq!(body["task_status"], "pending");
+    assert_eq!(repository.keywords_len(), 1);
+    assert_eq!(repository.tasks_len(), 1);
     assert_eq!(queue.published_len(), 1);
 }

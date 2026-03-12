@@ -4,6 +4,8 @@ use actix_web::{App, http::StatusCode, test, web};
 mod app_state;
 #[path = "../src/models/mod.rs"]
 mod models;
+#[path = "../src/repositories/mod.rs"]
+mod repositories;
 #[path = "../src/routes/mod.rs"]
 mod routes;
 #[path = "../src/services/mod.rs"]
