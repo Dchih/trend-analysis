@@ -4,13 +4,13 @@ from typing import Any
 
 import redis
 
-from src.persistence import InMemoryStore
+from src.persistence import Store
 from src.runtime import CollectorRuntime
 from src.worker import CollectorWorker
 
 
 class StreamWorker:
-    def __init__(self, runtime: CollectorRuntime, store: InMemoryStore) -> None:
+    def __init__(self, runtime: CollectorRuntime, store: Store) -> None:
         self.worker = CollectorWorker(runtime, store)
 
     def process_payload(self, payload: str) -> dict[str, Any]:
@@ -18,7 +18,7 @@ class StreamWorker:
         return self.worker.process(task)
 
 
-def consume_forever(runtime: CollectorRuntime, store: InMemoryStore) -> None:
+def consume_forever(runtime: CollectorRuntime, store: Store) -> None:
     redis_url = os.getenv("PRODUCT_RADAR_REDIS_URL", "redis://127.0.0.1:6379/0")
     stream_key = os.getenv("PRODUCT_RADAR_REDIS_STREAM", "collect_tasks")
     group_name = os.getenv("PRODUCT_RADAR_REDIS_GROUP", "collector_group")

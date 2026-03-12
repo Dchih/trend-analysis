@@ -1,10 +1,10 @@
 from src.aggregates import recompute_keyword_daily_stats
-from src.persistence import InMemoryStore
+from src.persistence import InMemoryStore, PostgresStore, Store
 from src.runtime import CollectorRuntime
 
 
 class CollectorWorker:
-    def __init__(self, runtime: CollectorRuntime, store: InMemoryStore) -> None:
+    def __init__(self, runtime: CollectorRuntime, store: Store) -> None:
         self.runtime = runtime
         self.store = store
 
@@ -19,7 +19,10 @@ class CollectorWorker:
 
         self.store.upsert_creators(normalized["creators"])
         self.store.upsert_content_items(normalized["content_items"])
-        stats = recompute_keyword_daily_stats(self.store.content_items())
+        stats = recompute_keyword_daily_stats(
+            self.store.content_items_for_keyword(task["keyword_id"])
+        )
+        self.store.replace_keyword_daily_stats(task["keyword_id"], platform, stats)
 
         return {
             "creators": normalized["creators"],
@@ -29,13 +32,19 @@ class CollectorWorker:
 
 
 def build_default_worker() -> CollectorWorker:
+    import os
+
     from src.plugins.youtube import YouTubePlugin
     from src.registry import PluginRegistry
 
     registry = PluginRegistry()
     registry.register(YouTubePlugin())
     runtime = CollectorRuntime(registry)
-    store = InMemoryStore()
+    database_url = os.getenv(
+        "PRODUCT_RADAR_DATABASE_URL",
+        "dbname=product_radar user=postgres password=Dz0504.. host=127.0.0.1 port=5432",
+    )
+    store = PostgresStore(database_url)
     return CollectorWorker(runtime, store)
 
 
