@@ -15,7 +15,14 @@ mod routes;
 mod services;
 
 use app_state::AppState;
-use models::{keyword::KeywordRecord, task::CollectionTaskRecord};
+use models::{
+    keyword::KeywordRecord,
+    overview::{
+        ContentCreatorSummary, KeywordOverviewResponse, LatestContentItem, TimelinePoint,
+        TopCreatorSummary,
+    },
+    task::CollectionTaskRecord,
+};
 use repositories::keywords::KeywordRepository;
 use routes::keywords::search_keyword;
 use services::task_queue::{CollectTaskMessage, TaskQueue};
@@ -86,6 +93,57 @@ impl KeywordRepository for RecordingRepository {
             finished_at: None,
             error_message: None,
         })
+    }
+
+    async fn fetch_overview(
+        &self,
+        _keyword_id: u64,
+        _range: &str,
+    ) -> Result<KeywordOverviewResponse, String> {
+        Ok(KeywordOverviewResponse {
+            keyword: "ninja creami".to_string(),
+            total_contents: 0,
+            total_creators: 0,
+            total_views: 0,
+            last_collected_at: None,
+            trend_delta: 0.0,
+        })
+    }
+
+    async fn fetch_timeline(
+        &self,
+        _keyword_id: u64,
+        _range: &str,
+    ) -> Result<Vec<TimelinePoint>, String> {
+        Ok(vec![])
+    }
+
+    async fn fetch_top_creators(
+        &self,
+        _keyword_id: u64,
+        _range: &str,
+        _limit: u64,
+    ) -> Result<Vec<TopCreatorSummary>, String> {
+        Ok(vec![])
+    }
+
+    async fn fetch_latest_contents(
+        &self,
+        _keyword_id: u64,
+        _range: &str,
+        _limit: u64,
+    ) -> Result<Vec<LatestContentItem>, String> {
+        Ok(vec![LatestContentItem {
+            content_id: 0,
+            title: String::new(),
+            thumbnail_url: String::new(),
+            published_at: String::new(),
+            view_count: 0,
+            creator: ContentCreatorSummary {
+                creator_id: 0,
+                display_name: String::new(),
+            },
+        }])
     }
 }
 
