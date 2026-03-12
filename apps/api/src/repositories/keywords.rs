@@ -23,6 +23,8 @@ pub trait KeywordRepository: Send + Sync {
         trigger_type: &str,
     ) -> Result<CollectionTaskRecord, String>;
 
+    async fn fetch_keyword_status(&self, keyword_id: u64) -> Result<CollectionTaskRecord, String>;
+
     async fn fetch_overview(
         &self,
         keyword_id: u64,
@@ -88,6 +90,20 @@ impl KeywordRepository for InMemoryKeywordRepository {
             keyword_id,
             platform: platform.to_string(),
             trigger_type: trigger_type.to_string(),
+            status: "pending".to_string(),
+            requested_at: "2026-03-12T10:00:00Z".to_string(),
+            started_at: None,
+            finished_at: None,
+            error_message: None,
+        })
+    }
+
+    async fn fetch_keyword_status(&self, keyword_id: u64) -> Result<CollectionTaskRecord, String> {
+        Ok(CollectionTaskRecord {
+            id: 1,
+            keyword_id,
+            platform: "youtube".to_string(),
+            trigger_type: "manual_search".to_string(),
             status: "pending".to_string(),
             requested_at: "2026-03-12T10:00:00Z".to_string(),
             started_at: None,
@@ -229,6 +245,44 @@ impl KeywordRepository for PgKeywordRepository {
                     error_message
                 ",
                 &[&(keyword_id as i64), &platform, &trigger_type],
+            )
+            .await
+            .map_err(|error| error.to_string())?;
+
+        Ok(CollectionTaskRecord {
+            id: row.get::<_, i64>(0) as u64,
+            keyword_id: row.get::<_, i64>(1) as u64,
+            platform: row.get(2),
+            trigger_type: row.get(3),
+            status: row.get(4),
+            requested_at: row.get(5),
+            started_at: row.get(6),
+            finished_at: row.get(7),
+            error_message: row.get(8),
+        })
+    }
+
+    async fn fetch_keyword_status(&self, keyword_id: u64) -> Result<CollectionTaskRecord, String> {
+        let row = self
+            .client
+            .query_one(
+                "
+                SELECT
+                    id,
+                    keyword_id,
+                    platform,
+                    trigger_type,
+                    status,
+                    requested_at::TEXT,
+                    started_at::TEXT,
+                    finished_at::TEXT,
+                    error_message
+                FROM collection_tasks
+                WHERE keyword_id = $1
+                ORDER BY requested_at DESC
+                LIMIT 1
+                ",
+                &[&(keyword_id as i64)],
             )
             .await
             .map_err(|error| error.to_string())?;

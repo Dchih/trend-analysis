@@ -14,21 +14,32 @@ class CollectorWorker:
         if plugin is None:
             raise ValueError(f"unsupported platform: {platform}")
 
-        raw_items = plugin.search(task["keyword"], task["time_range"])
-        normalized = plugin.normalize(raw_items, keyword_id=task["keyword_id"])
+        task_id = task.get("task_id")
+        if task_id is not None:
+            self.store.mark_task_running(task_id)
 
-        self.store.upsert_creators(normalized["creators"])
-        self.store.upsert_content_items(normalized["content_items"])
-        stats = recompute_keyword_daily_stats(
-            self.store.content_items_for_keyword(task["keyword_id"])
-        )
-        self.store.replace_keyword_daily_stats(task["keyword_id"], platform, stats)
+        try:
+            raw_items = plugin.search(task["keyword"], task.get("time_range", "30d"))
+            normalized = plugin.normalize(raw_items, keyword_id=task["keyword_id"])
 
-        return {
-            "creators": normalized["creators"],
-            "content_items": normalized["content_items"],
-            "stats": stats,
-        }
+            self.store.upsert_creators(normalized["creators"])
+            self.store.upsert_content_items(normalized["content_items"])
+            stats = recompute_keyword_daily_stats(
+                self.store.content_items_for_keyword(task["keyword_id"])
+            )
+            self.store.replace_keyword_daily_stats(task["keyword_id"], platform, stats)
+            if task_id is not None:
+                self.store.mark_task_succeeded(task_id, task["keyword_id"])
+
+            return {
+                "creators": normalized["creators"],
+                "content_items": normalized["content_items"],
+                "stats": stats,
+            }
+        except Exception as error:
+            if task_id is not None:
+                self.store.mark_task_failed(task_id, str(error))
+            raise
 
 
 def build_default_worker() -> CollectorWorker:

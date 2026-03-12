@@ -61,6 +61,20 @@ impl KeywordRepository for OverviewRepoStub {
         })
     }
 
+    async fn fetch_keyword_status(&self, keyword_id: u64) -> Result<CollectionTaskRecord, String> {
+        Ok(CollectionTaskRecord {
+            id: 1,
+            keyword_id,
+            platform: "youtube".to_string(),
+            trigger_type: "manual_search".to_string(),
+            status: "succeeded".to_string(),
+            requested_at: "2026-03-12T10:00:00Z".to_string(),
+            started_at: Some("2026-03-12T10:01:00Z".to_string()),
+            finished_at: Some("2026-03-12T10:02:00Z".to_string()),
+            error_message: None,
+        })
+    }
+
     async fn fetch_overview(
         &self,
         keyword_id: u64,

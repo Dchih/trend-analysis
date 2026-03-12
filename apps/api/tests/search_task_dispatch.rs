@@ -95,6 +95,20 @@ impl KeywordRepository for RecordingRepository {
         })
     }
 
+    async fn fetch_keyword_status(&self, keyword_id: u64) -> Result<CollectionTaskRecord, String> {
+        Ok(CollectionTaskRecord {
+            id: 99,
+            keyword_id,
+            platform: "youtube".to_string(),
+            trigger_type: "manual_search".to_string(),
+            status: "pending".to_string(),
+            requested_at: "2026-03-12T10:00:00Z".to_string(),
+            started_at: None,
+            finished_at: None,
+            error_message: None,
+        })
+    }
+
     async fn fetch_overview(
         &self,
         _keyword_id: u64,
@@ -188,4 +202,6 @@ async fn search_creates_a_pending_task_and_publishes_it() {
     assert_eq!(repository.keywords_len(), 1);
     assert_eq!(repository.tasks_len(), 1);
     assert_eq!(queue.published_len(), 1);
+    let published = queue.published.lock().expect("poisoned mutex");
+    assert_eq!(published[0].time_range, "30d");
 }

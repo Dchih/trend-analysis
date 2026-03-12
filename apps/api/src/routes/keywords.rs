@@ -40,6 +40,7 @@ pub async fn search_keyword(
             keyword: payload.keyword.clone(),
             platform: "youtube".to_string(),
             trigger: "manual_search".to_string(),
+            time_range: "30d".to_string(),
         })
         .await;
 
@@ -64,10 +65,19 @@ pub async fn keyword_history() -> impl Responder {
 }
 
 #[get("/api/v1/keywords/{id}/status")]
-pub async fn keyword_status(path: web::Path<u64>) -> impl Responder {
-    HttpResponse::Ok().json(KeywordStatusResponse {
-        keyword_id: path.into_inner(),
-        status: "pending",
-        last_collected_at: None,
-    })
+pub async fn keyword_status(
+    state: web::Data<AppState>,
+    path: web::Path<u64>,
+) -> impl Responder {
+    let keyword_id = path.into_inner();
+    match state.repository().fetch_keyword_status(keyword_id).await {
+        Ok(task) => HttpResponse::Ok().json(KeywordStatusResponse {
+            keyword_id,
+            status: task.status,
+            last_collected_at: task.finished_at,
+        }),
+        Err(error) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": error
+        })),
+    }
 }

@@ -22,4 +22,35 @@ describe('search store', () => {
     expect(store.lastResult?.id).toBe(11)
     expect(store.isSubmitting).toBe(false)
   })
+
+  it('polls until the collector succeeds', async () => {
+    const store = useSearchStore()
+    const statusClient = vi
+      .fn()
+      .mockResolvedValueOnce({
+        keyword_id: 11,
+        status: 'pending',
+        last_collected_at: null,
+      })
+      .mockResolvedValueOnce({
+        keyword_id: 11,
+        status: 'running',
+        last_collected_at: null,
+      })
+      .mockResolvedValueOnce({
+        keyword_id: 11,
+        status: 'succeeded',
+        last_collected_at: '2026-03-12T10:00:00Z',
+      })
+
+    const status = await store.pollKeywordStatus(11, statusClient, {
+      attempts: 3,
+      intervalMs: 0,
+    })
+
+    expect(statusClient).toHaveBeenCalledTimes(3)
+    expect(status.status).toBe('succeeded')
+    expect(store.lastStatus?.last_collected_at).toBe('2026-03-12T10:00:00Z')
+    expect(store.isPolling).toBe(false)
+  })
 })

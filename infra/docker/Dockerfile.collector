@@ -1,0 +1,12 @@
+FROM python:3.10-slim
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+RUN pip install --no-cache-dir psycopg[binary] redis
+
+COPY apps/collector/src /app/src
+
+CMD ["python", "-m", "src.worker"]

@@ -8,6 +8,7 @@ pub struct CollectTaskMessage {
     pub keyword: String,
     pub platform: String,
     pub trigger: String,
+    pub time_range: String,
 }
 
 #[async_trait]

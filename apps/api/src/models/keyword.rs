@@ -30,6 +30,6 @@ pub struct KeywordHistoryItem {
 #[derive(Debug, Serialize)]
 pub struct KeywordStatusResponse {
     pub keyword_id: u64,
-    pub status: &'static str,
-    pub last_collected_at: Option<&'static str>,
+    pub status: String,
+    pub last_collected_at: Option<String>,
 }

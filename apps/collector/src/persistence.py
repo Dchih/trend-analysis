@@ -15,6 +15,9 @@ class Store(Protocol):
         self, keyword_id: int, platform: str, stats: list[dict]
     ) -> None: ...
     def keyword_daily_stats_for_keyword(self, keyword_id: int) -> list[dict]: ...
+    def mark_task_running(self, task_id: int) -> None: ...
+    def mark_task_succeeded(self, task_id: int, keyword_id: int) -> None: ...
+    def mark_task_failed(self, task_id: int, error_message: str) -> None: ...
 
 
 class InMemoryStore:
@@ -61,6 +64,15 @@ class InMemoryStore:
             for row in self._keyword_daily_stats.values()
             if row["keyword_id"] == keyword_id
         ]
+
+    def mark_task_running(self, task_id: int) -> None:
+        return None
+
+    def mark_task_succeeded(self, task_id: int, keyword_id: int) -> None:
+        return None
+
+    def mark_task_failed(self, task_id: int, error_message: str) -> None:
+        return None
 
 
 class PostgresStore:
@@ -300,6 +312,50 @@ class PostgresStore:
                     (keyword_id,),
                 )
                 return list(cursor.fetchall())
+
+    def mark_task_running(self, task_id: int) -> None:
+        with self._connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE collection_tasks
+                    SET status = 'running', started_at = NOW(), error_message = NULL
+                    WHERE id = %s
+                    """,
+                    (task_id,),
+                )
+
+    def mark_task_succeeded(self, task_id: int, keyword_id: int) -> None:
+        with self._connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE collection_tasks
+                    SET status = 'succeeded', finished_at = NOW(), error_message = NULL
+                    WHERE id = %s
+                    """,
+                    (task_id,),
+                )
+                cursor.execute(
+                    """
+                    UPDATE keywords
+                    SET last_collected_at = NOW()
+                    WHERE id = %s
+                    """,
+                    (keyword_id,),
+                )
+
+    def mark_task_failed(self, task_id: int, error_message: str) -> None:
+        with self._connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE collection_tasks
+                    SET status = 'failed', finished_at = NOW(), error_message = %s
+                    WHERE id = %s
+                    """,
+                    (error_message[:1000], task_id),
+                )
 
     def delete_content_item(self, platform: str, platform_content_id: str) -> None:
         with self._connect() as connection:
