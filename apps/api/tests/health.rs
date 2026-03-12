@@ -6,6 +6,8 @@ mod app_state;
 mod models;
 #[path = "../src/routes/mod.rs"]
 mod routes;
+#[path = "../src/services/mod.rs"]
+mod services;
 
 use app_state::AppState;
 use routes::health::health;
@@ -15,7 +17,7 @@ use routes::keywords::{keyword_history, keyword_status, search_keyword};
 async fn health_returns_ok() {
     let app = test::init_service(
         App::new()
-            .app_data(web::Data::new(AppState))
+            .app_data(web::Data::new(AppState::default()))
             .service(health)
             .service(search_keyword)
             .service(keyword_history)

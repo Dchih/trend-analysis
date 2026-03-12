@@ -1,6 +1,7 @@
 mod app_state;
 mod models;
 mod routes;
+mod services;
 
 use actix_web::{App, HttpServer, web};
 
@@ -32,7 +33,7 @@ pub fn build_app(state: AppState) -> App<
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| build_app(AppState))
+    HttpServer::new(|| build_app(AppState::default()))
         .bind(("127.0.0.1", 8080))?
         .run()
         .await

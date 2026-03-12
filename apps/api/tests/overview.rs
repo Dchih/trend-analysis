@@ -6,6 +6,8 @@ mod app_state;
 mod models;
 #[path = "../src/routes/mod.rs"]
 mod routes;
+#[path = "../src/services/mod.rs"]
+mod services;
 
 use app_state::AppState;
 use routes::health::health;
@@ -16,7 +18,7 @@ use routes::overview::{keyword_overview, keyword_timeline, latest_contents, top_
 async fn overview_endpoint_returns_expected_shape() {
     let app = test::init_service(
         App::new()
-            .app_data(web::Data::new(AppState))
+            .app_data(web::Data::new(AppState::default()))
             .service(health)
             .service(search_keyword)
             .service(keyword_history)
@@ -47,7 +49,7 @@ async fn overview_endpoint_returns_expected_shape() {
 async fn timeline_endpoint_returns_points() {
     let app = test::init_service(
         App::new()
-            .app_data(web::Data::new(AppState))
+            .app_data(web::Data::new(AppState::default()))
             .service(health)
             .service(search_keyword)
             .service(keyword_history)
@@ -74,7 +76,7 @@ async fn timeline_endpoint_returns_points() {
 async fn top_creators_endpoint_returns_ranked_creators() {
     let app = test::init_service(
         App::new()
-            .app_data(web::Data::new(AppState))
+            .app_data(web::Data::new(AppState::default()))
             .service(health)
             .service(search_keyword)
             .service(keyword_history)
@@ -103,7 +105,7 @@ async fn top_creators_endpoint_returns_ranked_creators() {
 async fn latest_contents_endpoint_returns_cards() {
     let app = test::init_service(
         App::new()
-            .app_data(web::Data::new(AppState))
+            .app_data(web::Data::new(AppState::default()))
             .service(health)
             .service(search_keyword)
             .service(keyword_history)
