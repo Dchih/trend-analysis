@@ -8,10 +8,12 @@ import type {
   TimelinePoint,
 } from '../../api/keywords'
 import { fetchKeywordOverview, fetchKeywordTimeline, fetchLatestContents } from '../../api/keywords'
+import { useLocaleText } from '../../locales'
 import { useSearchStore } from '../../stores/search'
 
 const route = useRoute()
 const searchStore = useSearchStore()
+const text = useLocaleText()
 const range = ref<'7d' | '30d' | '90d'>('30d')
 const isLoading = ref(true)
 const overview = ref<KeywordOverviewResponse | null>(null)
@@ -26,19 +28,19 @@ const cards = computed(() => {
   }
 
   return [
-    { label: 'Captured videos', value: overview.value.total_contents.toLocaleString() },
-    { label: 'Creators mapped', value: overview.value.total_creators.toLocaleString() },
-    { label: 'Views tracked', value: overview.value.total_views.toLocaleString() },
+    { label: text.overview.cards.capturedVideos, value: overview.value.total_contents.toLocaleString() },
+    { label: text.overview.cards.creatorsMapped, value: overview.value.total_creators.toLocaleString() },
+    { label: text.overview.cards.viewsTracked, value: overview.value.total_views.toLocaleString() },
   ]
 })
 
 const timelineSummary = computed(() => {
   if (timeline.value.length === 0) {
-    return 'No timeline points collected yet.'
+    return text.overview.timelineEmpty
   }
 
   const latestPoint = timeline.value[timeline.value.length - 1]
-  return `${latestPoint.date} / ${latestPoint.new_content_count} new videos / ${latestPoint.total_views.toLocaleString()} views`
+  return `${latestPoint.date} / ${latestPoint.new_content_count} ${text.overview.timelineNewVideos} / ${latestPoint.total_views.toLocaleString()} ${text.overview.timelineViews}`
 })
 
 async function loadOverviewData() {
@@ -64,13 +66,13 @@ async function refresh() {
     })
 
     if (status.status === 'failed') {
-      throw new Error('Collector failed to finish this keyword scan')
+      throw new Error(text.overview.failedCollection)
     }
 
     await loadOverviewData()
   } catch (error) {
     errorMessage.value =
-      error instanceof Error ? error.message : 'Failed to load keyword overview'
+      error instanceof Error ? error.message : text.overview.failedOverview
   } finally {
     isLoading.value = false
   }
@@ -90,8 +92,8 @@ onMounted(() => {
   <main class="page-shell page-shell--overview">
     <section class="overview-header">
       <div>
-        <p class="eyebrow">Keyword Overview</p>
-        <h1 class="overview-title">{{ overview?.keyword ?? `Keyword #${keywordId}` }}</h1>
+        <p class="eyebrow">{{ text.overview.eyebrow }}</p>
+        <h1 class="overview-title">{{ overview?.keyword ?? `${text.overview.fallbackKeyword} #${keywordId}` }}</h1>
       </div>
       <div class="range-pills">
         <button
@@ -109,14 +111,14 @@ onMounted(() => {
 
     <section v-if="isLoading" class="content-grid">
       <article class="chart-panel">
-        <p class="panel-label">Collector status</p>
-        <div class="panel-placeholder">Waiting for collector to finish...</div>
+        <p class="panel-label">{{ text.overview.loadingLabel }}</p>
+        <div class="panel-placeholder">{{ text.overview.loadingStatus }}</div>
       </article>
     </section>
 
     <section v-else-if="errorMessage" class="content-grid">
       <article class="chart-panel">
-        <p class="panel-label">Load failed</p>
+        <p class="panel-label">{{ text.overview.loadFailed }}</p>
         <div class="panel-placeholder">{{ errorMessage }}</div>
       </article>
     </section>
@@ -131,15 +133,15 @@ onMounted(() => {
 
       <section class="content-grid">
         <article class="chart-panel">
-          <p class="panel-label">Signal timeline</p>
+          <p class="panel-label">{{ text.overview.timeline }}</p>
           <div class="panel-placeholder">{{ timelineSummary }}</div>
         </article>
 
         <article class="list-panel">
-          <p class="panel-label">Latest videos</p>
+          <p class="panel-label">{{ text.overview.latestVideos }}</p>
           <div v-if="latestVideos.length === 0" class="video-item">
-            <strong>No videos captured yet</strong>
-            <span>Trigger a search and wait for collector completion.</span>
+            <strong>{{ text.overview.emptyVideosTitle }}</strong>
+            <span>{{ text.overview.emptyVideosDescription }}</span>
           </div>
           <div v-for="item in latestVideos" :key="item.content_id" class="video-item">
             <strong>{{ item.title }}</strong>

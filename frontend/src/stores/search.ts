@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 
 import type { KeywordSearchResponse, KeywordStatusResponse } from '../api/keywords'
 import { fetchKeywordStatus, searchKeyword } from '../api/keywords'
+import { messages } from '../locales'
 
 type SearchClient = (keyword: string) => Promise<KeywordSearchResponse>
 type StatusClient = (keywordId: number) => Promise<KeywordStatusResponse>
@@ -28,7 +29,8 @@ export const useSearchStore = defineStore('search', {
         this.lastResult = result
         return result
       } catch (error) {
-        this.lastError = error instanceof Error ? error.message : 'Unknown search error'
+        this.lastError =
+          error instanceof Error ? error.message : messages.search.unknownSearchError
         throw error
       } finally {
         this.isSubmitting = false
@@ -59,9 +61,10 @@ export const useSearchStore = defineStore('search', {
           }
         }
 
-        throw new Error('Keyword scan timed out before collector finished')
+        throw new Error(messages.search.timeoutError)
       } catch (error) {
-        this.lastError = error instanceof Error ? error.message : 'Unknown polling error'
+        this.lastError =
+          error instanceof Error ? error.message : messages.search.unknownPollingError
         throw error
       } finally {
         this.isPolling = false
