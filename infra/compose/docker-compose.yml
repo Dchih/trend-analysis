@@ -49,6 +49,9 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.collector
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     environment:
       PRODUCT_RADAR_DATABASE_URL: dbname=product_radar user=postgres password=postgres host=postgres port=5432
       PRODUCT_RADAR_REDIS_URL: redis://redis:6379/0
