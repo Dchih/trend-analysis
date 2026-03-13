@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-product_radar}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../sql/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-product_radar}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.api
+    restart: unless-stopped
+    environment:
+      PRODUCT_RADAR_BIND_ADDR: 0.0.0.0:8080
+      PRODUCT_RADAR_DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-product_radar}
+      PRODUCT_RADAR_REDIS_URL: redis://redis:6379/0
+      PRODUCT_RADAR_REDIS_STREAM: collect_tasks
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  collector:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.collector
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      PRODUCT_RADAR_DATABASE_URL: dbname=${POSTGRES_DB:-product_radar} user=${POSTGRES_USER:-postgres} password=${POSTGRES_PASSWORD} host=postgres port=5432
+      PRODUCT_RADAR_REDIS_URL: redis://redis:6379/0
+      PRODUCT_RADAR_REDIS_STREAM: collect_tasks
+      PRODUCT_RADAR_REDIS_GROUP: collector_group
+      PRODUCT_RADAR_REDIS_CONSUMER: worker_1
+      PRODUCT_RADAR_YOUTUBE_API_KEY: ${PRODUCT_RADAR_YOUTUBE_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.frontend
+      args:
+        VITE_BASE_PATH: ${VITE_BASE_PATH:-/product-radar/}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:80"
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  postgres-data:
+  redis-data:
