@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://productradar.local/schemas/domain/creator.schema.json",
+  "title": "Creator",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "platform": {
+      "type": "string",
+      "enum": ["youtube"]
+    },
+    "platform_creator_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "handle": {
+      "type": "string"
+    },
+    "avatar_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "subscriber_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "video_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "creator_score": {
+      "type": "number",
+      "minimum": 0
+    },
+    "raw_payload": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "platform",
+    "platform_creator_id",
+    "display_name"
+  ]
+}

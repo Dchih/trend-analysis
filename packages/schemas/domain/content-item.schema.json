@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://productradar.local/schemas/domain/content-item.schema.json",
+  "title": "ContentItem",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "platform": {
+      "type": "string",
+      "enum": ["youtube"]
+    },
+    "platform_content_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "keyword_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "creator_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "thumbnail_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "view_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "like_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "comment_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "engagement_score": {
+      "type": "number",
+      "minimum": 0
+    },
+    "raw_payload": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "platform",
+    "platform_content_id",
+    "keyword_id",
+    "creator_id",
+    "title",
+    "url",
+    "published_at"
+  ]
+}
