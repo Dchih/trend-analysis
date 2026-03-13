@@ -3,7 +3,9 @@ import { createMemoryHistory, createRouter, createWebHistory, type RouterHistory
 import KeywordOverviewPage from '../pages/keyword/KeywordOverviewPage.vue'
 import SearchPage from '../pages/search/SearchPage.vue'
 
-export function createAppRouter(history: RouterHistory = createWebHistory()) {
+export function createAppRouter(
+  history: RouterHistory = createWebHistory(import.meta.env.BASE_URL),
+) {
   return createRouter({
     history,
     routes: [

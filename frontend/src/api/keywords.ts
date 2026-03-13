@@ -1,3 +1,5 @@
+import { buildApiPath } from '../config/base-path'
+
 export type KeywordSearchResponse = {
   id: number
   keyword: string
@@ -49,7 +51,7 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export function searchKeyword(keyword: string): Promise<KeywordSearchResponse> {
-  return fetchJson<KeywordSearchResponse>('/api/v1/keywords/search', {
+  return fetchJson<KeywordSearchResponse>(buildApiPath('/api/v1/keywords/search'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -59,18 +61,20 @@ export function searchKeyword(keyword: string): Promise<KeywordSearchResponse> {
 }
 
 export function fetchKeywordStatus(keywordId: number): Promise<KeywordStatusResponse> {
-  return fetchJson<KeywordStatusResponse>(`/api/v1/keywords/${keywordId}/status`)
+  return fetchJson<KeywordStatusResponse>(buildApiPath(`/api/v1/keywords/${keywordId}/status`))
 }
 
 export function fetchKeywordOverview(
   keywordId: number,
   range = '30d',
 ): Promise<KeywordOverviewResponse> {
-  return fetchJson<KeywordOverviewResponse>(`/api/v1/keywords/${keywordId}/overview?range=${range}`)
+  return fetchJson<KeywordOverviewResponse>(
+    buildApiPath(`/api/v1/keywords/${keywordId}/overview?range=${range}`),
+  )
 }
 
 export function fetchKeywordTimeline(keywordId: number, range = '30d'): Promise<TimelinePoint[]> {
-  return fetchJson<TimelinePoint[]>(`/api/v1/keywords/${keywordId}/timeline?range=${range}`)
+  return fetchJson<TimelinePoint[]>(buildApiPath(`/api/v1/keywords/${keywordId}/timeline?range=${range}`))
 }
 
 export function fetchLatestContents(
@@ -79,6 +83,6 @@ export function fetchLatestContents(
   limit = 10,
 ): Promise<LatestContentItem[]> {
   return fetchJson<LatestContentItem[]>(
-    `/api/v1/keywords/${keywordId}/contents/latest?range=${range}&limit=${limit}`,
+    buildApiPath(`/api/v1/keywords/${keywordId}/contents/latest?range=${range}&limit=${limit}`),
   )
 }

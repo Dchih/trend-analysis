@@ -17,4 +17,10 @@ describe('app router', () => {
 
     expect(route?.path).toBe('/keywords/:id')
   })
+
+  it('supports a deploy base path for prefixed hosting', () => {
+    const router = createAppRouter(createMemoryHistory('/product-radar/'))
+
+    expect(router.resolve('/keywords/7').href).toBe('/product-radar/keywords/7')
+  })
 })
