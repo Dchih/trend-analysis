@@ -100,4 +100,5 @@ describe('keyword api', () => {
     expect(timeline[0].active_creator_count).toBe(2)
     expect(latest[0].creator.display_name).toBe('Kitchen Lab')
   })
+
 })
